@@ -1,0 +1,8 @@
+.idea/
+.bsp/
+*/project/*
+project/*
+!project/plugins.sbt
+!project/dependencies.scala
+!project/versions.scala
+target/
