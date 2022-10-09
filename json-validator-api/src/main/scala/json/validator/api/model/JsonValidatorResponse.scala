@@ -1,7 +1,7 @@
 package json.validator.api.model
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 
 case class JsonValidatorResponse(
     action: Action,
@@ -11,7 +11,8 @@ case class JsonValidatorResponse(
 )
 
 object JsonValidatorResponse {
-  implicit val codec: Codec[JsonValidatorResponse] = deriveCodec
+  implicit val encoder: Encoder[JsonValidatorResponse] = deriveEncoder[JsonValidatorResponse].mapJson(_.deepDropNullValues)
+  implicit val codec: Decoder[JsonValidatorResponse]   = deriveDecoder[JsonValidatorResponse]
 
   def success(action: Action, id: String): JsonValidatorResponse =
     JsonValidatorResponse(action, id, Status.Success)
