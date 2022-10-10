@@ -44,4 +44,3 @@ lazy val `json-validator-api` = project
       }
     }
   )
-
