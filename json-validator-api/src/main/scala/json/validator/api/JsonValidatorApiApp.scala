@@ -1,7 +1,7 @@
 package json.validator.api
 
 import json.validator.api.routes.JsonSchemaRegistry
-import json.validator.domain.{JsonSchemaRegistryService, NaiveJsonSchemaRegistryService}
+import json.validator.domain.{JsonSchemaRegistryService, InMemoryJsonSchemaRegistryService}
 import org.http4s.HttpRoutes
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.Router
@@ -30,7 +30,7 @@ object JsonValidatorApiApp extends ZIOAppDefault {
     ZIO.logInfo("Starting Json Validator service...") *>
       serve
         .provide(
-          NaiveJsonSchemaRegistryService.layer
+          InMemoryJsonSchemaRegistryService.layer
         )
         .exitCode
 }

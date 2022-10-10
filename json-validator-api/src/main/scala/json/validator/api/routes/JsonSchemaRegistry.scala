@@ -3,12 +3,13 @@ package json.validator.api.routes
 import io.circe.{Decoder, Encoder, JsonObject}
 import json.validator.api.model.{Action, JsonValidatorResponse}
 import json.validator.domain.JsonSchemaRegistryService
+import json.validator.domain.model.DomainServiceError.{InvalidRequestError, UniquenessViolationError}
 import json.validator.domain.model.JsonSchema
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, MalformedMessageBodyFailure}
+import zio.RIO
 import zio.interop.catz._
-import zio.{RIO, ZIO}
 
 object JsonSchemaRegistry {
 
@@ -25,15 +26,21 @@ object JsonSchemaRegistry {
     HttpRoutes.of[Effect] { case request @ POST -> Root / "schema" / schemaId =>
       request
         .as[JsonObject]
+        .mapError {
+          case MalformedMessageBodyFailure(details: String, _) =>
+            InvalidRequestError(details)
+          case throwable                                       =>
+            InvalidRequestError(throwable.getMessage)
+        }
         .flatMap(jsonSchema => JsonSchemaRegistryService.register(JsonSchema(schemaId, jsonSchema)))
         .foldZIO(
           {
-            case MalformedMessageBodyFailure(details: String, _) =>
-              BadRequest(JsonValidatorResponse.error(Action.UploadSchema, schemaId, details))
-            case throwable                                       =>
-              InternalServerError(JsonValidatorResponse.error(Action.UploadSchema, schemaId, throwable.getMessage))
+            case InvalidRequestError(message) =>
+              BadRequest(JsonValidatorResponse.error(Action.UploadSchema, schemaId, message))
+            case er: UniquenessViolationError =>
+              UnprocessableEntity(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
           },
-          _ => ZIO.logInfo("great success") *> Created(JsonValidatorResponse.success(Action.UploadSchema, schemaId))
+          _ => Created(JsonValidatorResponse.success(Action.UploadSchema, schemaId))
         )
     }
   }

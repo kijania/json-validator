@@ -1,24 +1,33 @@
 package json.validator.domain
 
-import json.validator.domain.model.JsonSchema
-import zio.{RIO, Task, UIO, ULayer, ZIO, ZLayer}
+import json.validator.domain.model.DomainServiceError.UniquenessViolationError
+import json.validator.domain.model.{DomainServiceError, JsonSchema}
+import zio.{IO, ULayer, ZIO, ZLayer}
+
+import scala.collection.concurrent.TrieMap
 
 trait JsonSchemaRegistryService {
-  def register(schema: JsonSchema): Task[Unit]
+  def register(schema: JsonSchema): IO[DomainServiceError, Unit]
 }
 
 object JsonSchemaRegistryService {
-  def register(schema: JsonSchema): RIO[JsonSchemaRegistryService, Unit] =
+  def register(schema: JsonSchema): ZIO[JsonSchemaRegistryService, DomainServiceError, Unit] =
     ZIO.serviceWithZIO[JsonSchemaRegistryService](_.register(schema))
 }
 
-class NaiveJsonSchemaRegistryService extends JsonSchemaRegistryService {
-  override def register(schema: JsonSchema): UIO[Unit] =
-    ZIO.logInfo(s"Registered new schema: $schema")
+class InMemoryJsonSchemaRegistryService extends JsonSchemaRegistryService {
+  private val schemas: TrieMap[JsonSchema.Id, JsonSchema] = TrieMap.empty
+
+  override def register(schema: JsonSchema): IO[DomainServiceError, Unit] =
+    ZIO.cond(
+      !schemas.contains(schema.id),
+      schemas.put(schema.id, schema),
+      UniquenessViolationError(schema.id)
+    ).unit
 }
 
-object NaiveJsonSchemaRegistryService {
+object InMemoryJsonSchemaRegistryService {
   def layer: ULayer[JsonSchemaRegistryService] =
-    ZLayer.succeed(new NaiveJsonSchemaRegistryService())
+    ZLayer.succeed(new InMemoryJsonSchemaRegistryService())
 }
 
