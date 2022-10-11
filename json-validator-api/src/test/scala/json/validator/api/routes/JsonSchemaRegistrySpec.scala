@@ -19,7 +19,7 @@ object JsonSchemaRegistrySpec extends ZIOSpecDefault {
   type Response[T] = JsonSchemaRegistry.Effect[T]
   private val app = JsonSchemaRegistry.routes.orNotFound
 
-  override def spec: Spec[Any, Throwable] =
+  override def spec = {
     suite("JsonSchemaRegistry")(
       test("should register new schema") {
         val jsonSchema = decode[Json](Source.fromResource("config-schema.json").mkString).value
@@ -83,4 +83,5 @@ object JsonSchemaRegistrySpec extends ZIOSpecDefault {
           .provideLayer(InMemoryJsonSchemaRegistryService.layer)
       }
     )
+  }
 }

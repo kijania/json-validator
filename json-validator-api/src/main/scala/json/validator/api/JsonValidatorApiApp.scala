@@ -1,7 +1,8 @@
 package json.validator.api
 
-import json.validator.api.routes.JsonSchemaRegistry
-import json.validator.domain.{JsonSchemaRegistryService, InMemoryJsonSchemaRegistryService}
+import cats.syntax.all._
+import json.validator.api.routes.{JsonSchemaRegistry, JsonValidation}
+import json.validator.domain.{InMemoryJsonSchemaRegistryService, JsonSchemaRegistryService}
 import org.http4s.HttpRoutes
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.Router
@@ -12,7 +13,7 @@ object JsonValidatorApiApp extends ZIOAppDefault {
 
   type AppEffect[T] = RIO[JsonSchemaRegistryService, T]
 
-  val routes: HttpRoutes[AppEffect] = JsonSchemaRegistry.routes
+  val routes: HttpRoutes[AppEffect] = JsonSchemaRegistry.routes <+> JsonValidation.routes
 
   val serve: AppEffect[Unit] =
     for {

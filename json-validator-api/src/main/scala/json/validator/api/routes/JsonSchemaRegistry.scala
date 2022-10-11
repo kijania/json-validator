@@ -34,6 +34,7 @@ object JsonSchemaRegistry {
               InvalidRequestError(throwable.getMessage)
           }
           .flatMap(jsonSchema => JsonSchemaRegistryService.register(JsonSchema(schemaId, jsonSchema)))
+          // TODO other error cannot happen internalServerError won't happen
           .foldZIO(
             {
               case InvalidRequestError(message) =>
@@ -41,7 +42,7 @@ object JsonSchemaRegistry {
               case er: UniquenessViolationError =>
                 UnprocessableEntity(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
               case er                           =>
-                InternalServerError(er.message)
+                InternalServerError(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
             },
             _ => Created(JsonValidatorResponse.success(Action.UploadSchema, schemaId))
           )

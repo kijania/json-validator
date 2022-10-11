@@ -9,7 +9,8 @@ lazy val `json-validator` = (project in file("."))
 
 lazy val commonSettings = Defaults.itSettings ++ Seq(
   libraryDependencies ++= dependencies.test,
-  testFrameworks += TestFramework("zio.test.sbt.ZTestFramework")
+  testFrameworks += TestFramework("zio.test.sbt.ZTestFramework"),
+  resolvers += "jitpack.io" at "https://jitpack.io"
 )
 
 lazy val `domain` = project

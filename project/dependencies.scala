@@ -14,10 +14,11 @@ object dependencies {
   )
 
   lazy val circe: Seq[ModuleID] = Seq(
-    "io.circe" %% "circe-core"    % versions.Circe,
-    "io.circe" %% "circe-generic" % versions.Circe,
-    "io.circe" %% "circe-literal" % versions.Circe,
-    "io.circe" %% "circe-parser"  % versions.Circe
+    "io.circe" %% "circe-core"        % versions.Circe,
+    "io.circe" %% "circe-generic"     % versions.Circe,
+    "io.circe" %% "circe-literal"     % versions.Circe,
+    "io.circe" %% "circe-parser"      % versions.Circe,
+    "io.circe" %% "circe-json-schema" % versions.CirceSchema
   )
 
   lazy val enumeration: Seq[ModuleID] = Seq(
