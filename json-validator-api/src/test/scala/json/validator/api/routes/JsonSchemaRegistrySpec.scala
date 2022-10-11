@@ -58,9 +58,29 @@ object JsonSchemaRegistrySpec extends ZIOSpecDefault {
         (
           for {
             invalidJsonResponse <- app.run(request)
-            body                <- invalidJsonResponse.as[JsonValidatorResponse]
           } yield assert(invalidJsonResponse.status)(equalTo(Status.BadRequest))
         ).provideLayer(InMemoryJsonSchemaRegistryService.layer)
+      },
+      test("should return registered schema") {
+        val jsonSchema      = decode[Json](Source.fromResource("config-schema.json").mkString).value
+        val registerRequest = Request[Response](Method.POST, "/schema/config-schema".toUri).withEntity(jsonSchema)
+        val getRequest      = Request[Response](Method.GET, "/schema/config-schema".toUri)
+
+        (
+          for {
+            _           <- app.run(registerRequest)
+            getResponse <- app.run(getRequest)
+            body        <- getResponse.as[Json]
+          } yield assert(getResponse.status)(equalTo(Status.Ok)) &&
+            assert(body)(equalTo(jsonSchema))
+        ).provideLayer(InMemoryJsonSchemaRegistryService.layer)
+      },
+      test("should return not found when getting not existent schema") {
+        val getRequest = Request[Response](Method.GET, "/schema/config-schema".toUri)
+        app
+          .run(getRequest)
+          .map(response => assert(response.status)(equalTo(Status.NotFound)))
+          .provideLayer(InMemoryJsonSchemaRegistryService.layer)
       }
     )
 }

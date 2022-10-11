@@ -23,25 +23,35 @@ object JsonSchemaRegistry {
   implicit def circeJsonEncoder[T: Encoder]: EntityEncoder[Effect, T] = jsonEncoderOf[Effect, T]
 
   val routes: HttpRoutes[Effect] = {
-    HttpRoutes.of[Effect] { case request @ POST -> Root / "schema" / schemaId =>
-      request
-        .as[JsonObject]
-        .mapError {
-          case MalformedMessageBodyFailure(details: String, _) =>
-            InvalidRequestError(details)
-          case throwable                                       =>
-            InvalidRequestError(throwable.getMessage)
-        }
-        .flatMap(jsonSchema => JsonSchemaRegistryService.register(JsonSchema(schemaId, jsonSchema)))
-        .foldZIO(
-          {
-            case InvalidRequestError(message) =>
-              BadRequest(JsonValidatorResponse.error(Action.UploadSchema, schemaId, message))
-            case er: UniquenessViolationError =>
-              UnprocessableEntity(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
-          },
-          _ => Created(JsonValidatorResponse.success(Action.UploadSchema, schemaId))
-        )
+    HttpRoutes.of[Effect] {
+      case request @ POST -> Root / "schema" / schemaId =>
+        request
+          .as[JsonObject]
+          .mapError {
+            case MalformedMessageBodyFailure(details: String, _) =>
+              InvalidRequestError(details)
+            case throwable                                       =>
+              InvalidRequestError(throwable.getMessage)
+          }
+          .flatMap(jsonSchema => JsonSchemaRegistryService.register(JsonSchema(schemaId, jsonSchema)))
+          .foldZIO(
+            {
+              case InvalidRequestError(message) =>
+                BadRequest(JsonValidatorResponse.error(Action.UploadSchema, schemaId, message))
+              case er: UniquenessViolationError =>
+                UnprocessableEntity(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
+              case er                           =>
+                InternalServerError(er.message)
+            },
+            _ => Created(JsonValidatorResponse.success(Action.UploadSchema, schemaId))
+          )
+      case GET -> Root / "schema" / schemaId            =>
+        JsonSchemaRegistryService
+          .get(schemaId)
+          .foldZIO(
+            er => InternalServerError(er.message),
+            _.fold(NotFound())(Ok(_))
+          )
     }
   }
 }
