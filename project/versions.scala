@@ -5,4 +5,5 @@ object versions {
   val Circe        = "0.14.3"
   val ZioInterop   = "3.3.0"
   val Enumeration  = "1.7.0"
+  val ScalaTest    = "3.2.14"
 }

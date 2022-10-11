@@ -7,7 +7,13 @@ addCommandAlias("fmt", "scalafmtSbt; scalafmtAll")
 lazy val `json-validator` = (project in file("."))
   .aggregate(`json-validator-api`)
 
+lazy val commonSettings = Defaults.itSettings ++ Seq(
+  libraryDependencies ++= dependencies.test,
+  testFrameworks += TestFramework("zio.test.sbt.ZTestFramework")
+)
+
 lazy val `domain` = project
+  .settings(commonSettings: _*)
   .settings(
     name := "domain",
     libraryDependencies ++=
@@ -17,6 +23,7 @@ lazy val `domain` = project
   )
 
 lazy val `json-validator-api` = project
+  .settings(commonSettings: _*)
   .dependsOn(`domain`)
   .settings(
     name := "json-validator-api",

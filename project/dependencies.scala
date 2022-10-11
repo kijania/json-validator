@@ -15,11 +15,20 @@ object dependencies {
 
   lazy val circe: Seq[ModuleID] = Seq(
     "io.circe" %% "circe-core"    % versions.Circe,
-    "io.circe" %% "circe-generic" % versions.Circe
+    "io.circe" %% "circe-generic" % versions.Circe,
+    "io.circe" %% "circe-literal" % versions.Circe,
+    "io.circe" %% "circe-parser"  % versions.Circe
   )
 
   lazy val enumeration: Seq[ModuleID] = Seq(
     "com.beachape" %% "enumeratum"       % versions.Enumeration,
     "com.beachape" %% "enumeratum-circe" % versions.Enumeration
   )
+
+  lazy val test: Seq[ModuleID] = Seq(
+    "org.scalatest" %% "scalatest"         % versions.ScalaTest,
+    "dev.zio"       %% "zio-test"          % versions.ZIO,
+    "dev.zio"       %% "zio-test-sbt"      % versions.ZIO,
+    "dev.zio"       %% "zio-test-magnolia" % versions.ZIO
+  ).map(_ % Test)
 }

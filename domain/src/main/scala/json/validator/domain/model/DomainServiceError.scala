@@ -6,7 +6,7 @@ sealed trait DomainServiceError {
 
 object DomainServiceError {
   case class UniquenessViolationError(id: JsonSchema.Id) extends DomainServiceError {
-    override def message: String = s"Schema with id: $id already exists"
+    override def message: String = s"Schema with id: '$id' already exists"
   }
   case class InvalidRequestError(message: String) extends DomainServiceError
 }
