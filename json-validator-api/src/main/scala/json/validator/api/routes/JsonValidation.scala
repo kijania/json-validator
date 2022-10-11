@@ -29,13 +29,7 @@ object JsonValidation {
         json       <- request
                         .as[JsonObject]
                         .map(_.asJson.deepDropNullValues)
-                        .mapError {
-                          case MalformedMessageBodyFailure(details: String, _) =>
-                            InvalidRequestError(details)
-                          case throwable                                       =>
-                            InvalidRequestError(throwable.getMessage)
-                        }
-        // TODO generalize this handling to above method
+                        .mapError(_.toDomainError)
         jsonSchema <- JsonSchemaRegistryService
                         .get(schemaId)
                         .flatMap(ZIO.fromOption(_).mapError(_ => NotFoundError(schemaId)))

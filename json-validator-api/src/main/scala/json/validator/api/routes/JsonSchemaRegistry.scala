@@ -27,14 +27,8 @@ object JsonSchemaRegistry {
       case request @ POST -> Root / "schema" / schemaId =>
         request
           .as[JsonObject]
-          .mapError {
-            case MalformedMessageBodyFailure(details: String, _) =>
-              InvalidRequestError(details)
-            case throwable                                       =>
-              InvalidRequestError(throwable.getMessage)
-          }
+          .mapError(_.toDomainError)
           .flatMap(jsonSchema => JsonSchemaRegistryService.register(JsonSchema(schemaId, jsonSchema)))
-          // TODO other error cannot happen internalServerError won't happen
           .foldZIO(
             {
               case InvalidRequestError(message) =>

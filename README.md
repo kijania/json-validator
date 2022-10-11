@@ -6,8 +6,6 @@
 
 it would:
 * compile application
-* run unit tests
-* format the code
 * build Docker image
 * and run application
 
