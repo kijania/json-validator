@@ -1,7 +1,7 @@
 package json.validator.domain
 
 import io.circe.JsonObject
-import json.validator.domain.model.DomainServiceError.UniquenessViolationError
+import json.validator.domain.model.DomainServiceError.{NotFoundError, UniquenessViolationError}
 import json.validator.domain.model.{DomainServiceError, JsonSchema}
 import zio.{IO, ULayer, ZIO, ZLayer}
 
@@ -10,14 +10,14 @@ import scala.collection.concurrent.TrieMap
 trait JsonSchemaRegistryService {
   def register(schema: JsonSchema): IO[DomainServiceError, Unit]
 
-  def get(id: JsonSchema.Id): IO[DomainServiceError, Option[JsonObject]]
+  def get(id: JsonSchema.Id): IO[DomainServiceError, JsonObject]
 }
 
 object JsonSchemaRegistryService {
   def register(schema: JsonSchema): ZIO[JsonSchemaRegistryService, DomainServiceError, Unit] =
     ZIO.serviceWithZIO[JsonSchemaRegistryService](_.register(schema))
 
-  def get(id: JsonSchema.Id): ZIO[JsonSchemaRegistryService, DomainServiceError, Option[JsonObject]] =
+  def get(id: JsonSchema.Id): ZIO[JsonSchemaRegistryService, DomainServiceError, JsonObject] =
     ZIO.serviceWithZIO[JsonSchemaRegistryService](_.get(id))
 }
 
@@ -31,8 +31,13 @@ class InMemoryJsonSchemaRegistryService extends JsonSchemaRegistryService {
       UniquenessViolationError(schema.id)
     ).unit
 
-  override def get(id: JsonSchema.Id): IO[DomainServiceError, Option[JsonObject]] =
-    ZIO.succeed(schemas.get(id).map(_.schema))
+  override def get(id: JsonSchema.Id): IO[DomainServiceError, JsonObject] =
+    ZIO.fromEither(
+      schemas
+        .get(id)
+        .map(_.schema)
+        .toRight(NotFoundError(id))
+    )
 }
 
 object InMemoryJsonSchemaRegistryService {

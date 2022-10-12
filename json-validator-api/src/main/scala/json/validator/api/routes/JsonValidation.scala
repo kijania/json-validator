@@ -29,10 +29,7 @@ object JsonValidation {
                         .as[JsonObject]
                         .map(_.asJson.deepDropNullValues)
                         .mapError(_.toDomainError)
-        jsonSchema <- JsonSchemaRegistryService
-                        .get(schemaId)
-                        .flatMap(ZIO.fromOption(_).mapError(_ => NotFoundError(schemaId)))
-                        .map(_.asJson)
+        jsonSchema <- JsonSchemaRegistryService.get(schemaId).map(_.asJson)
         _          <- JsonValidationService.validate(json, jsonSchema)
         // TODO refactor error handling to one mapper or extract it from the domain service error
       } yield JsonValidatorResponse.success(Action.ValidateDocument, schemaId)).foldZIO(

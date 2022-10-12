@@ -3,11 +3,11 @@ package json.validator.api.routes
 import io.circe.{Decoder, Encoder, JsonObject}
 import json.validator.api.model.{Action, JsonValidatorResponse}
 import json.validator.domain.JsonSchemaRegistryService
-import json.validator.domain.model.DomainServiceError.{InvalidRequestError, UniquenessViolationError}
+import json.validator.domain.model.DomainServiceError.{InvalidRequestError, NotFoundError, UniquenessViolationError}
 import json.validator.domain.model.JsonSchema
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, MalformedMessageBodyFailure}
+import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes}
 import zio.RIO
 import zio.interop.catz._
 
@@ -44,8 +44,11 @@ object JsonSchemaRegistry {
         JsonSchemaRegistryService
           .get(schemaId)
           .foldZIO(
-            er => InternalServerError(er.message),
-            _.fold(NotFound())(Ok(_))
+            {
+              case _: NotFoundError => NotFound()
+              case er => InternalServerError(er.message)
+            },
+            Ok(_)
           )
     }
   }
