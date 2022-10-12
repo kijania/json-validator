@@ -23,7 +23,8 @@ object dependencies {
 
   lazy val enumeration: Seq[ModuleID] = Seq(
     "com.beachape" %% "enumeratum"       % versions.Enumeration,
-    "com.beachape" %% "enumeratum-circe" % versions.Enumeration
+    "com.beachape" %% "enumeratum-circe" % versions.Enumeration,
+    "com.beachape" %% "enumeratum-quill" % versions.Enumeration
   )
 
   lazy val test: Seq[ModuleID]   = Seq(
@@ -36,5 +37,10 @@ object dependencies {
   lazy val config: Seq[ModuleID] = Seq(
     "com.github.pureconfig" %% "pureconfig" % versions.PureConfig,
     "com.typesafe"           % "config"     % versions.TypesafeConfig
+  )
+
+  lazy val quill: Seq[ModuleID] = Seq(
+    "io.getquill"   %% "quill-jdbc-zio" % versions.Quill,
+    "org.postgresql" % "postgresql"     % versions.PostgreSQL
   )
 }

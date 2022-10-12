@@ -2,12 +2,8 @@ package json.validator.api
 
 import cats.syntax.all._
 import json.validator.api.routes.{JsonSchemaRegistry, JsonValidation}
-import json.validator.domain.{
-  CirceJsonSchemaValidator,
-  InMemoryJsonSchemaRegistryService,
-  JsonSchemaRegistryService,
-  JsonValidationService
-}
+import json.validator.domain.{CirceJsonSchemaValidator, JsonSchemaRegistryService, JsonValidationService}
+import json.validator.persistence.QuillJsonSchemaRegistryService
 import org.http4s.HttpRoutes
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.Router
@@ -39,7 +35,7 @@ object JsonValidatorApiApp extends ZIOAppDefault {
       serve
         .provide(
           AppConfig.layer,
-          InMemoryJsonSchemaRegistryService.layer,
+          QuillJsonSchemaRegistryService.layer,
           CirceJsonSchemaValidator.layer
         )
         .exitCode

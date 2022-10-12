@@ -19,4 +19,6 @@ object DomainServiceError {
   case class NotFoundError(schemaId: JsonSchema.Id) extends DomainServiceError {
     override def message: String = s"Schema with id: '$schemaId' could not be found'"
   }
+
+  case class InternalServerError(message: String) extends DomainServiceError
 }

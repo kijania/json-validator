@@ -9,4 +9,6 @@ object versions {
   val ScalaTest      = "3.2.14"
   val PureConfig     = "0.17.1"
   val TypesafeConfig = "1.4.2"
+  val Quill          = "4.5.0"
+  val PostgreSQL     = "42.5.0"
 }

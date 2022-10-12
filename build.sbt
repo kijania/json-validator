@@ -26,6 +26,7 @@ lazy val `domain` = project
 lazy val `json-validator-api` = project
   .settings(commonSettings: _*)
   .dependsOn(`domain`)
+  .dependsOn(`postgres-persistence`)
   .settings(
     resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/",
     name := "json-validator-api",
@@ -53,4 +54,14 @@ lazy val `json-validator-api` = project
         entryPoint("java", "-jar", artifactTargetPath)
       }
     }
+  )
+
+lazy val `postgres-persistence` = project
+  .settings(commonSettings: _*)
+  .dependsOn(`domain`)
+  .settings(
+    name := "postgres-persistence",
+    libraryDependencies ++=
+      dependencies.zio ++
+        dependencies.quill
   )
