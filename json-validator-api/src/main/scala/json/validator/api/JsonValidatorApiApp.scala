@@ -16,27 +16,29 @@ import zio.interop.catz._
 
 object JsonValidatorApiApp extends ZIOAppDefault {
 
-  type AppEffect[T] = RIO[JsonSchemaRegistryService with JsonValidationService, T]
+  type AppEffect[T] = RIO[JsonSchemaRegistryService with JsonValidationService with AppConfig, T]
 
   val routes: HttpRoutes[AppEffect] =
     JsonSchemaRegistry.routes.asInstanceOf[HttpRoutes[AppEffect]] <+> JsonValidation.routes.asInstanceOf[HttpRoutes[AppEffect]]
 
   val serve: AppEffect[Unit] =
     for {
-      executor <- ZIO.executor
-      server   <- BlazeServerBuilder[AppEffect]
-                    .withExecutionContext(executor.asExecutionContext)
-                    .bindHttp(80, "0.0.0.0")
-                    .withHttpApp(Router("/" -> routes).orNotFound)
-                    .serve
-                    .compile
-                    .drain
+      executor  <- ZIO.executor
+      appConfig <- ZIO.service[AppConfig]
+      server    <- BlazeServerBuilder[AppEffect]
+                     .withExecutionContext(executor.asExecutionContext)
+                     .bindHttp(appConfig.http.port, appConfig.http.host)
+                     .withHttpApp(Router("/" -> routes).orNotFound)
+                     .serve
+                     .compile
+                     .drain
     } yield server
 
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
     ZIO.logInfo("Starting Json Validator service...") *>
       serve
         .provide(
+          AppConfig.layer,
           InMemoryJsonSchemaRegistryService.layer,
           CirceJsonSchemaValidator.layer
         )

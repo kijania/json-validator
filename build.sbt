@@ -27,9 +27,11 @@ lazy val `json-validator-api` = project
   .settings(commonSettings: _*)
   .dependsOn(`domain`)
   .settings(
+    resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/",
     name := "json-validator-api",
     libraryDependencies ++=
-      dependencies.http4s
+      dependencies.http4s ++
+        dependencies.config
   )
   .enablePlugins(DockerPlugin)
   .settings(

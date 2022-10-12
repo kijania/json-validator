@@ -9,6 +9,10 @@ it would:
 * build Docker image
 * and run application
 
+### Run tests, format code and build docker image:
+
+1. Run `./ci.sh`
+
 ### Implementation details:
 Application is using `circe-json-schema` for schema validation, it provides errors accumulation
 

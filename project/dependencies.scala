@@ -26,10 +26,15 @@ object dependencies {
     "com.beachape" %% "enumeratum-circe" % versions.Enumeration
   )
 
-  lazy val test: Seq[ModuleID] = Seq(
+  lazy val test: Seq[ModuleID]   = Seq(
     "org.scalatest" %% "scalatest"         % versions.ScalaTest,
     "dev.zio"       %% "zio-test"          % versions.ZIO,
     "dev.zio"       %% "zio-test-sbt"      % versions.ZIO,
     "dev.zio"       %% "zio-test-magnolia" % versions.ZIO
   ).map(_ % Test)
+
+  lazy val config: Seq[ModuleID] = Seq(
+    "com.github.pureconfig" %% "pureconfig" % versions.PureConfig,
+    "com.typesafe"           % "config"     % versions.TypesafeConfig
+  )
 }
