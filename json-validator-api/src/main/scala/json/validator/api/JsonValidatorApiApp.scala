@@ -2,7 +2,12 @@ package json.validator.api
 
 import cats.syntax.all._
 import json.validator.api.routes.{JsonSchemaRegistry, JsonValidation}
-import json.validator.domain.{InMemoryJsonSchemaRegistryService, JsonSchemaRegistryService}
+import json.validator.domain.{
+  CirceJsonSchemaValidator,
+  InMemoryJsonSchemaRegistryService,
+  JsonSchemaRegistryService,
+  JsonValidationService
+}
 import org.http4s.HttpRoutes
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.Router
@@ -11,9 +16,10 @@ import zio.interop.catz._
 
 object JsonValidatorApiApp extends ZIOAppDefault {
 
-  type AppEffect[T] = RIO[JsonSchemaRegistryService, T]
+  type AppEffect[T] = RIO[JsonSchemaRegistryService with JsonValidationService, T]
 
-  val routes: HttpRoutes[AppEffect] = JsonSchemaRegistry.routes <+> JsonValidation.routes
+  val routes: HttpRoutes[AppEffect] =
+    JsonSchemaRegistry.routes.asInstanceOf[HttpRoutes[AppEffect]] <+> JsonValidation.routes.asInstanceOf[HttpRoutes[AppEffect]]
 
   val serve: AppEffect[Unit] =
     for {
@@ -31,7 +37,8 @@ object JsonValidatorApiApp extends ZIOAppDefault {
     ZIO.logInfo("Starting Json Validator service...") *>
       serve
         .provide(
-          InMemoryJsonSchemaRegistryService.layer
+          InMemoryJsonSchemaRegistryService.layer,
+          CirceJsonSchemaValidator.layer
         )
         .exitCode
 }

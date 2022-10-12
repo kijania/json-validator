@@ -2,7 +2,7 @@ package json.validator.api
 
 import json.validator.domain.model.DomainServiceError
 import json.validator.domain.model.DomainServiceError.InvalidRequestError
-import org.http4s.{DecodeFailure, MalformedMessageBodyFailure, Uri}
+import org.http4s.{MalformedMessageBodyFailure, Uri}
 
 package object routes {
   implicit class HttpErrorOps(error: Throwable) {

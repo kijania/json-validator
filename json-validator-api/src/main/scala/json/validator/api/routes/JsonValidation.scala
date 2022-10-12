@@ -1,20 +1,19 @@
 package json.validator.api.routes
 
-import io.circe.schema.Schema
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, JsonObject}
 import json.validator.api.model.{Action, JsonValidatorResponse}
-import json.validator.domain.JsonSchemaRegistryService
-import json.validator.domain.model.DomainServiceError.{InvalidRequestError, NotFoundError, ValidationError}
+import json.validator.domain.model.DomainServiceError.{NotFoundError, ValidationError}
+import json.validator.domain.{JsonSchemaRegistryService, JsonValidationService}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, MalformedMessageBodyFailure}
+import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes}
 import zio.interop.catz._
 import zio.{RIO, ZIO}
 
 object JsonValidation {
 
-  type Effect[T] = RIO[JsonSchemaRegistryService, T]
+  type Effect[T] = RIO[JsonSchemaRegistryService with JsonValidationService, T]
   private val dsl = Http4sDsl[Effect]
 
   import dsl._
@@ -33,19 +32,8 @@ object JsonValidation {
         jsonSchema <- JsonSchemaRegistryService
                         .get(schemaId)
                         .flatMap(ZIO.fromOption(_).mapError(_ => NotFoundError(schemaId)))
-        _          <-
-          // TODO refactor this way to enable changing schema validation function
-          ZIO.fromEither(
-            Schema
-              .load(jsonSchema.asJson)
-              .validate(json)
-              .leftMap(errors =>
-                ValidationError(
-                  errors.map(_.getMessage)
-                )
-              )
-              .toEither
-          )
+                        .map(_.asJson)
+        _          <- JsonValidationService.validate(json, jsonSchema)
         // TODO refactor error handling to one mapper or extract it from the domain service error
       } yield JsonValidatorResponse.success(Action.ValidateDocument, schemaId)).foldZIO(
         {
