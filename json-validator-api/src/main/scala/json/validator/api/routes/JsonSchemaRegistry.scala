@@ -3,11 +3,16 @@ package json.validator.api.routes
 import io.circe.{Decoder, Encoder, JsonObject}
 import json.validator.api.model.{Action, JsonValidatorResponse}
 import json.validator.domain.JsonSchemaRegistryService
-import json.validator.domain.model.DomainServiceError.{InvalidRequestError, NotFoundError, UniquenessViolationError}
-import json.validator.domain.model.JsonSchema
+import json.validator.domain.model.DomainServiceError.{
+  InvalidRequestError,
+  NotFoundError,
+  UniquenessViolationError,
+  ValidationError
+}
+import json.validator.domain.model.{DomainServiceError, JsonSchema}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes}
+import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import zio.RIO
 import zio.interop.catz._
 
@@ -30,14 +35,7 @@ object JsonSchemaRegistry {
           .mapError(_.toDomainError)
           .flatMap(jsonSchema => JsonSchemaRegistryService.register(JsonSchema(schemaId, jsonSchema)))
           .foldZIO(
-            {
-              case InvalidRequestError(message) =>
-                BadRequest(JsonValidatorResponse.error(Action.UploadSchema, schemaId, message))
-              case er: UniquenessViolationError =>
-                UnprocessableEntity(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
-              case er                           =>
-                InternalServerError(JsonValidatorResponse.error(Action.UploadSchema, schemaId, er.message))
-            },
+            errorMapper(Action.UploadSchema, schemaId),
             _ => Created(JsonValidatorResponse.success(Action.UploadSchema, schemaId))
           )
       case GET -> Root / "schema" / schemaId            =>
@@ -46,10 +44,21 @@ object JsonSchemaRegistry {
           .foldZIO(
             {
               case _: NotFoundError => NotFound()
-              case er => InternalServerError(er.message)
+              case er               => InternalServerError(er.message)
             },
             Ok(_)
           )
+    }
+  }
+
+  private def errorMapper(action: Action, schemaId: JsonSchema.Id): DomainServiceError => Effect[Response[Effect]] = er => {
+    val response = JsonValidatorResponse.error(action, schemaId, er.message)
+    er match {
+      case _: InvalidRequestError      => BadRequest(response)
+      case _: NotFoundError            => NotFound(response)
+      case _: ValidationError          => UnprocessableEntity(response)
+      case _: UniquenessViolationError => UnprocessableEntity(response)
+      case _                           => InternalServerError(response)
     }
   }
 }

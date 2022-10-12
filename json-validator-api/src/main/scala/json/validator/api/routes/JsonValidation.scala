@@ -3,13 +3,19 @@ package json.validator.api.routes
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, JsonObject}
 import json.validator.api.model.{Action, JsonValidatorResponse}
-import json.validator.domain.model.DomainServiceError.{NotFoundError, ValidationError}
+import json.validator.domain.model.DomainServiceError.{
+  InvalidRequestError,
+  NotFoundError,
+  UniquenessViolationError,
+  ValidationError
+}
+import json.validator.domain.model.{DomainServiceError, JsonSchema}
 import json.validator.domain.{JsonSchemaRegistryService, JsonValidationService}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes}
+import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
+import zio.RIO
 import zio.interop.catz._
-import zio.{RIO, ZIO}
 
 object JsonValidation {
 
@@ -31,16 +37,21 @@ object JsonValidation {
                         .mapError(_.toDomainError)
         jsonSchema <- JsonSchemaRegistryService.get(schemaId).map(_.asJson)
         _          <- JsonValidationService.validate(json, jsonSchema)
-        // TODO refactor error handling to one mapper or extract it from the domain service error
       } yield JsonValidatorResponse.success(Action.ValidateDocument, schemaId)).foldZIO(
-        {
-          case er: ValidationError =>
-            UnprocessableEntity(JsonValidatorResponse.error(Action.ValidateDocument, schemaId, er.message))
-          case er: NotFoundError   => NotFound(JsonValidatorResponse.error(Action.ValidateDocument, schemaId, er.message))
-          case er                  => InternalServerError(JsonValidatorResponse.error(Action.ValidateDocument, schemaId, er.message))
-        },
+        errorMapper(Action.ValidateDocument, schemaId),
         Ok(_)
       )
+    }
+  }
+
+  private def errorMapper(action: Action, schemaId: JsonSchema.Id): DomainServiceError => Effect[Response[Effect]] = er => {
+    val response = JsonValidatorResponse.error(action, schemaId, er.message)
+    er match {
+      case _: InvalidRequestError      => BadRequest(response)
+      case _: NotFoundError            => NotFound(response)
+      case _: ValidationError          => UnprocessableEntity(response)
+      case _: UniquenessViolationError => UnprocessableEntity(response)
+      case _                           => InternalServerError(response)
     }
   }
 }
