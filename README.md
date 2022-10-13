@@ -22,6 +22,17 @@ it would:
 
 Run: `./stop.sh`
 
+### Restart application (without loosing previously uploaded JSON schemas):
+
+Run: `./restart.sh`
+
+it would:
+* restart application
+
+it won't:
+* start Postgres database, so previously uploaded JSON schemas won't be loosed
+* recompile and rebuild application if there are changes, as it potentially might raise conflict with the database schema
+
 ### Run tests, format code and build docker image:
 
 1. Run `./ci.sh`
@@ -29,7 +40,7 @@ Run: `./stop.sh`
 ### Implementation details:
 Application is using `circe-json-schema` for schema validation, it provides errors accumulation
 
-JSON SCHEMA is currently encoded in database as a varchar what brings many limitations and should be changed to jsonb with better endcoding in the code
+JSON schema is currently encoded in database as a varchar what brings many limitations and should be changed to jsonb with better endcoding in the code
 
 More generic resource management on connection between Http4s and ZIO would be beneficial
 
