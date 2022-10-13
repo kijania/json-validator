@@ -33,7 +33,7 @@ JSON SCHEMA is currently encoded in database as a varchar what brings many limit
 
 More generic resource management on connection between Http4s and ZIO would be beneficial
 
-Extracted HTTP Error Mapper would be beneficial.
+Extracting one common HTTP Error Mapper for all routes would be beneficial.
 
 Endpoint GET /schema/SCHEMAID is providing response not in the same format as other two endpoints, because it wasn't requested, and it looked it might be designed for different audience, e.g. internal users
 

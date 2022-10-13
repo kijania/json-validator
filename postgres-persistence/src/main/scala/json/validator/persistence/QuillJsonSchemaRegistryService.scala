@@ -6,7 +6,7 @@ import io.circe.parser.decode
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import json.validator.domain.JsonSchemaRegistryService
-import json.validator.domain.model.DomainServiceError.{InternalServerError, NotFoundError}
+import json.validator.domain.model.DomainServiceError.{InternalServerError, NotFoundError, UniquenessViolationError}
 import json.validator.domain.model.{DomainServiceError, JsonSchema}
 import json.validator.persistence.QuillJsonSchemaRegistryService.dataSourceLayer
 import zio.{IO, TaskLayer, ZIO, ZLayer}
@@ -22,7 +22,10 @@ class QuillJsonSchemaRegistryService(quill: Quill.Postgres[SnakeCase]) extends J
     MappedEncoding[String, JsonObject](decode[JsonObject](_).valueOr(throw _))
 
   override def register(schema: JsonSchema): IO[DomainServiceError, Unit] =
-    insertOrIgnore(schema).mapError(er => InternalServerError(er.getMessage)).unit
+    insertOrIgnore(schema).mapError(er => InternalServerError(er.getMessage)).flatMap {
+      case numberOfUpdatedRows if numberOfUpdatedRows == 0 => ZIO.fail(UniquenessViolationError(schema.id))
+      case _ => ZIO.unit
+    }
 
   override def get(id: JsonSchema.Id): IO[DomainServiceError, JsonObject] =
     retrieveById(id)
